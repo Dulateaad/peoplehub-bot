@@ -1,4 +1,5 @@
 require("dotenv").config();
+const fs = require("fs");
 const path = require("path");
 const { Bot, InlineKeyboard, InputFile } = require("grammy");
 const { initializeApp } = require("firebase/app");
@@ -22,6 +23,9 @@ const WELCOME_PHOTO = path.join(__dirname, "..", "assets", "welcome.png");
 const SUPPORT_USERNAME = process.env.SUPPORT_USERNAME || "dulatea";
 const SUPPORT_URL = `https://t.me/${SUPPORT_USERNAME}`;
 
+/** Кеш file_id после первой успешной отправки — быстрее и надёжнее */
+let welcomeFileId = process.env.WELCOME_FILE_ID || null;
+
 function startKeyboard() {
   return new InlineKeyboard()
     .webApp("🚀 Начать", `${WEB_APP_URL}/hub`)
@@ -31,9 +35,32 @@ function startKeyboard() {
 
 /** Приветствие: только фото + кнопки (текст уже на картинке) */
 async function sendWelcome(ctx) {
-  await ctx.replyWithPhoto(new InputFile(WELCOME_PHOTO), {
-    reply_markup: startKeyboard(),
-  });
+  const markup = startKeyboard();
+
+  try {
+    if (welcomeFileId) {
+      const msg = await ctx.replyWithPhoto(welcomeFileId, { reply_markup: markup });
+      return msg;
+    }
+
+    if (!fs.existsSync(WELCOME_PHOTO)) {
+      console.error("Welcome photo missing:", WELCOME_PHOTO);
+      await ctx.reply("👋 PeopleHub", { reply_markup: markup });
+      return;
+    }
+
+    const msg = await ctx.replyWithPhoto(new InputFile(WELCOME_PHOTO), {
+      reply_markup: markup,
+    });
+    const id = msg?.photo?.[msg.photo.length - 1]?.file_id;
+    if (id) {
+      welcomeFileId = id;
+      console.log("Cached welcome file_id");
+    }
+  } catch (err) {
+    console.error("sendWelcome failed:", err.message);
+    await ctx.reply("👋 PeopleHub", { reply_markup: markup });
+  }
 }
 
 // ==================== FIREBASE ====================
@@ -398,11 +425,11 @@ bot.command("support", async (ctx) => {
   });
 });
 
-// Any text → кнопки открытия приложения
+// Любой текст (не команда) → то же фото + кнопки
 bot.on("message:text", async (ctx) => {
-  await ctx.reply("Выберите действие:", {
-    reply_markup: startKeyboard(),
-  });
+  const text = ctx.message?.text || "";
+  if (text.startsWith("/")) return;
+  await sendWelcome(ctx);
 });
 
 // Error handler
@@ -425,6 +452,7 @@ async function main() {
 
   console.log("PeopleHub Bot started (long polling)");
   console.log(`Web App: ${WEB_APP_URL}`);
+  console.log(`Welcome photo: ${WELCOME_PHOTO} exists=${fs.existsSync(WELCOME_PHOTO)}`);
   console.log(`Subscription: ${STARS_PER_DAY} Stars/day, ${STARS_PER_MONTH} Stars/month`);
   console.log("Products: trips (active), REALTY/AUTO/TOURISM (coming soon)");
 
