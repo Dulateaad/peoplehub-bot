@@ -26,10 +26,7 @@ function startKeyboard() {
   return new InlineKeyboard()
     .webApp("🚀 Начать", `${WEB_APP_URL}/hub`)
     .row()
-    .webApp("🚗 Поездки", `${WEB_APP_URL}/client`)
-    .row()
-    .url("🎧 Поддержка", SUPPORT_URL)
-    .text("🚨 102", "call_102");
+    .webApp("🚗 Поездки", `${WEB_APP_URL}/client`);
 }
 
 /** Приветствие: только фото + кнопки (текст уже на картинке) */
