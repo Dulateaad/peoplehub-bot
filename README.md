@@ -1,6 +1,6 @@
 # PeopleHub Telegram Bot
 
-Telegram бот для мини-приложения такси PeopleHub.
+Telegram бот для мини-приложения поездок PeopleHub.
 
 ## Деплой на Render
 

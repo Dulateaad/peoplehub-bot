@@ -103,7 +103,7 @@ bot.callbackQuery("call_102", async (ctx) => {
   await ctx.reply("🚨 Полиция: `102`", { parse_mode: "Markdown" });
 });
 
-bot.command("taxi", async (ctx) => {
+bot.command(["trips", "taxi", "poezdki"], async (ctx) => {
   const keyboard = new InlineKeyboard().webApp(
     "🚗 Поездки",
     `${WEB_APP_URL}/client`
@@ -372,7 +372,7 @@ bot.command("help", async (ctx) => {
     `📖 *Команды PeopleHub Bot*\n\n` +
       `*Сервисы:*\n` +
       `/start — Все сервисы\n` +
-      `/taxi — Поездки (пассажир)\n` +
+      `/trips — Поездки (пассажир)\n` +
       `/driver — Панель водителя\n\n` +
       `*Абонентка водителя:*\n` +
       `/subscribe — Выбрать тариф абонентки\n` +
@@ -436,7 +436,19 @@ async function main() {
   console.log("PeopleHub Bot started (long polling)");
   console.log(`Web App: ${WEB_APP_URL}`);
   console.log(`Subscription: ${STARS_PER_DAY} Stars/day, ${STARS_PER_MONTH} Stars/month`);
-  console.log("Products: TAXI (active), REALTY/AUTO/TOURISM (coming soon)");
+  console.log("Products: trips (active), REALTY/AUTO/TOURISM (coming soon)");
+
+  // Меню команд в Telegram: «Поездки», не «Такси»
+  await bot.api.setMyCommands([
+    { command: "start", description: "Открыть PeopleHub" },
+    { command: "trips", description: "Поездки" },
+    { command: "driver", description: "Панель водителя" },
+    { command: "subscribe", description: "Абонентка водителя" },
+    { command: "help", description: "Помощь" },
+    { command: "support", description: "Служба поддержки" },
+    { command: "about", description: "О платформе" },
+  ]);
+
   bot.start();
 }
 
