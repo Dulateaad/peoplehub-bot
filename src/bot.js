@@ -19,7 +19,8 @@ const STARS_PER_DAY = parseInt(process.env.STARS_PER_DAY || "33");
 const STARS_PER_MONTH = parseInt(process.env.STARS_PER_MONTH || "600");
 const SUBSCRIPTION_PERIOD = 30 * 24 * 60 * 60; // 30 days in seconds
 const WELCOME_PHOTO = path.join(__dirname, "..", "assets", "welcome.png");
-const SUPPORT_PHONE = process.env.SUPPORT_PHONE || "87007121040";
+const SUPPORT_USERNAME = process.env.SUPPORT_USERNAME || "dulatea";
+const SUPPORT_URL = `https://t.me/${SUPPORT_USERNAME}`;
 
 function startKeyboard() {
   return new InlineKeyboard()
@@ -27,7 +28,7 @@ function startKeyboard() {
     .row()
     .webApp("🚗 Поездки", `${WEB_APP_URL}/client`)
     .row()
-    .text("🎧 Поддержка", "call_support")
+    .url("🎧 Поддержка", SUPPORT_URL)
     .text("🚨 102", "call_102");
 }
 
@@ -89,13 +90,6 @@ const bot = new Bot(BOT_TOKEN);
 
 bot.command("start", async (ctx) => {
   await sendWelcome(ctx);
-});
-
-bot.callbackQuery("call_support", async (ctx) => {
-  await ctx.answerCallbackQuery();
-  await ctx.reply(`🎧 Служба поддержки: \`${SUPPORT_PHONE}\`\n\nНаберите номер или сохраните контакт.`, {
-    parse_mode: "Markdown",
-  });
 });
 
 bot.callbackQuery("call_102", async (ctx) => {
@@ -402,10 +396,9 @@ bot.command("about", async (ctx) => {
 });
 
 bot.command("support", async (ctx) => {
-  await ctx.reply(
-    `🎧 Служба поддержки: \`${SUPPORT_PHONE}\`\n\nНаберите номер — мы на связи.`,
-    { parse_mode: "Markdown" }
-  );
+  await ctx.reply(`🎧 Служба поддержки: @${SUPPORT_USERNAME}`, {
+    reply_markup: new InlineKeyboard().url("Написать в Telegram", SUPPORT_URL),
+  });
 });
 
 // Any text → кнопки открытия приложения
