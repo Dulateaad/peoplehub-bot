@@ -15,7 +15,7 @@ if (!BOT_TOKEN) {
   process.exit(1);
 }
 
-const WEB_APP_URL = process.env.WEB_APP_URL || "https://taxi-eb8b7.web.app";
+const WEB_APP_URL = (process.env.WEB_APP_URL || "https://taxi-eb8b7.web.app").replace(/\/$/, "");
 const STARS_PER_DAY = parseInt(process.env.STARS_PER_DAY || "33");
 const STARS_PER_MONTH = parseInt(process.env.STARS_PER_MONTH || "600");
 const SUBSCRIPTION_PERIOD = 30 * 24 * 60 * 60; // 30 days in seconds
@@ -27,10 +27,11 @@ const SUPPORT_URL = `https://t.me/${SUPPORT_USERNAME}`;
 let welcomeFileId = process.env.WELCOME_FILE_ID || null;
 
 function startKeyboard() {
+  // Корень домена надёжнее открывается в Telegram, чем /hub (меньше отказов Mini App)
   return new InlineKeyboard()
-    .webApp("🚀 Начать", `${WEB_APP_URL}/hub`)
+    .webApp("🚀 Начать", `${WEB_APP_URL}/`)
     .row()
-    .webApp("🚗 Поездки", `${WEB_APP_URL}/client`);
+    .webApp("🚗 Поездки", `${WEB_APP_URL}/?open=client`);
 }
 
 /** Приветствие: только фото + кнопки (текст уже на картинке) */
@@ -122,22 +123,14 @@ bot.callbackQuery("call_102", async (ctx) => {
 });
 
 bot.command(["trips", "taxi", "poezdki"], async (ctx) => {
-  const keyboard = new InlineKeyboard().webApp(
-    "🚗 Поездки",
-    `${WEB_APP_URL}/client`
-  );
   await ctx.reply("Нажмите кнопку, чтобы открыть поездки:", {
-    reply_markup: keyboard,
+    reply_markup: new InlineKeyboard().webApp("🚗 Поездки", `${WEB_APP_URL}/?open=client`),
   });
 });
 
 bot.command("driver", async (ctx) => {
-  const keyboard = new InlineKeyboard().webApp(
-    "🚗 Панель водителя",
-    `${WEB_APP_URL}/driver`
-  );
   await ctx.reply("Откройте панель водителя:", {
-    reply_markup: keyboard,
+    reply_markup: new InlineKeyboard().webApp("🚗 Панель водителя", `${WEB_APP_URL}/?open=driver`),
   });
 });
 
@@ -152,7 +145,7 @@ bot.command("subscribe", async (ctx) => {
       {
         reply_markup: new InlineKeyboard().webApp(
           "🚗 Регистрация водителя",
-          `${WEB_APP_URL}/driver`
+          `${WEB_APP_URL}/?open=driver`
         ),
       }
     );
@@ -365,7 +358,7 @@ bot.on("message:successful_payment", async (ctx) => {
         parse_mode: "Markdown",
         reply_markup: new InlineKeyboard().webApp(
           "🚗 Открыть панель водителя",
-          `${WEB_APP_URL}/driver`
+          `${WEB_APP_URL}/?open=driver`
         ),
       }
     );
@@ -466,6 +459,19 @@ async function main() {
     { command: "support", description: "Служба поддержки" },
     { command: "about", description: "О платформе" },
   ]);
+
+  // Кнопка меню слева внизу → Mini App (корень домена)
+  try {
+    await bot.api.setChatMenuButton({
+      menu_button: {
+        type: "web_app",
+        text: "Открыть",
+        web_app: { url: `${WEB_APP_URL}/` },
+      },
+    });
+  } catch (err) {
+    console.warn("setChatMenuButton failed:", err.message);
+  }
 
   bot.start();
 }
